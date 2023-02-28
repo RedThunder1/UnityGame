@@ -6,8 +6,8 @@ using UnityEngine.Serialization;
 
 public class PlayerMovement : MonoBehaviour
 {
-    
-    public CharacterController controller;
+
+    public static CharacterController controller;
 
     public float baseSpeed = 18f;
     public float speed = 18f;
@@ -15,27 +15,29 @@ public class PlayerMovement : MonoBehaviour
     Vector3 _velocity;
     public float gravity = -9.81f;
     public float jumpHeight = 3f;
+    public float crouchSpeedModifier = 2f;
 
     public Transform groundCheck;
     public float groundDistance = 0.4f;
     public LayerMask groundMask;
     public Transform headCheck;
-    
+
     private bool _isGrounded;
-    //private bool _isCrouched;
-    //private bool _isJumpColliding;
+    private bool _isCrouched;
+    private bool _isJumpColliding;
     private bool isSprinting;
-    
+    public static bool _canMove = true;
+
     void Start()
     {
-        
+        controller = GetComponent<CharacterController>();
     }
 
     // Update is called once per frame
     void Update()
     {
         _isGrounded = Physics.CheckSphere(groundCheck.position, groundDistance, groundMask);
-        //_isJumpColliding = Physics.CheckSphere(headCheck.position, 0.4f, groundMask);
+        _isJumpColliding = Physics.CheckSphere(headCheck.position, 0.4f, groundMask);
 
         if (_isGrounded && _velocity.y < 0)
         {
@@ -52,19 +54,21 @@ public class PlayerMovement : MonoBehaviour
 
         Vector3 move = transform.right * x + transform.forward * z;
 
-        controller.Move(move * (speed * Time.deltaTime));
-        
+        if (_canMove)
+        {
+            controller.Move(move * (speed * Time.deltaTime));
+        }
+
         //JUMP CODE
-        
-        
+
+
         if (Input.GetButton("Jump") && _isGrounded)
-        { 
+        {
             _velocity.y = Mathf.Sqrt(jumpHeight * -2 * gravity);
         }
 
 
-        //CROUCH CODE
-        /*if (Input.GetButtonDown("Crouch"))
+        if (Input.GetButtonDown("Crouch"))
         {
             if (_isCrouched)
             {
@@ -81,9 +85,8 @@ public class PlayerMovement : MonoBehaviour
                 jumpHeight = (jumpHeight / 2f);
             }
         }
-        */
-        
-        
+
+
         //SPRINT CODE
         if (Input.GetButton("Sprint"))
         {
@@ -95,11 +98,19 @@ public class PlayerMovement : MonoBehaviour
             isSprinting = false;
             speed = baseSpeed;
         }
-        
-        
+
+
 
         _velocity.y += gravity * Time.deltaTime;
+        if (_isCrouched)
+        {
+            speed = speed / crouchSpeedModifier;
+        }
+        
+        if (_canMove)
+        {
+            controller.Move(_velocity * Time.deltaTime);
 
-        controller.Move(_velocity * Time.deltaTime);
+        }
     }
 }
